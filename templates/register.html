@@ -1,0 +1,67 @@
+<!-- templates/register.html -->
+{% extends 'home.html' %}
+
+{% block title %}Регистрация{% endblock %}
+
+{% block content %}
+    <h2>Регистрация</h2>
+
+    <form id="registerForm" method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <input type="file" class="checker_image_input" id="checker_image_input" name="checker_image"
+               style="display:none; !important;"/>
+        <p id="file-feedback" style="display: none; color: green;">Файл добавлен: snapshot.jpg</p>
+        <button type="submit">Зарегистрироваться</button>
+    </form>
+
+    <!-- Camera capture elements -->
+    <video id="video" width="320" height="240" autoplay></video>
+    <button type="button" id="capture">Сделать снимок</button>
+    <canvas id="canvas" width="320" height="240" style="display:none;"></canvas>
+
+    <script>
+
+        const video = document.getElementById('video');
+        const captureButton = document.getElementById('capture');
+        const canvas = document.getElementById('canvas');
+        const checkerImageInput = document.getElementById('checker_image_input');
+
+        // Start video stream from the camera
+        navigator.mediaDevices.getUserMedia({video: true})
+            .then(stream => {
+                video.srcObject = stream;
+            })
+            .catch(err => {
+                console.error("Ошибка доступа к камере: " + err);
+            });
+
+        const fileFeedback = document.getElementById('file-feedback');
+
+        captureButton.addEventListener('click', function () {
+            const context = canvas.getContext('2d');
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            // Convert the canvas image to a blob and create a File object from it
+            canvas.toBlob(function (blob) {
+                if (!blob) {
+                    alert("Ошибка создания снимка");
+                    return;
+                }
+
+                const file = new File([blob], 'snapshot.jpg', {type: 'image/jpeg'});
+
+                // Update the hidden file input with the blob
+                const dataTransfer = new DataTransfer();
+                dataTransfer.items.add(file);
+                checkerImageInput.files = dataTransfer.files;
+
+                // Show feedback text
+                fileFeedback.style.display = 'block';
+
+                alert('Снимок сделан и добавлен в форму. Теперь вы можете зарегистрироваться.');
+            }, 'image/jpeg');
+        });
+
+    </script>
+{% endblock %}

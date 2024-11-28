@@ -1,0 +1,54 @@
+{% extends 'home.html' %}
+
+{% block title %}Вход{% endblock %}
+
+{% block content %}
+    <h2>Вход</h2>
+
+    <form method="post" enctype="multipart/form-data" id="login-form">
+        {% csrf_token %}
+         {{ form.username.label_tag }} {{ form.username }}
+         {{ form.password.label_tag }} {{ form.password }}
+        <input style="display: none;!important;" type="file" name="image" id="image-input">
+        <button type="submit">Войти</button>
+    </form>
+    
+    <video id="video" width="320" height="240" autoplay></video>
+    <button id="capture">Сделать снимок</button>
+    <canvas id="canvas" width="320" height="240" style="display:none;"></canvas>
+
+    <script>
+        // Запуск камеры
+        const video = document.getElementById('video');
+        navigator.mediaDevices.getUserMedia({video: true})
+            .then(stream => {
+                video.srcObject = stream;
+            })
+            .catch(err => {
+                console.error("Ошибка доступа к камере: " + err);
+            });
+
+        // Обработка снимка
+        document.getElementById('capture').addEventListener('click', function () {
+            const canvas = document.getElementById('canvas');
+            const context = canvas.getContext('2d');
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+            // Преобразование изображения в файл для отправки на сервер
+            canvas.toBlob(function (blob) {
+                const fileInput = document.createElement('input');
+                fileInput.type = 'file';
+                fileInput.name = 'image'; // Имя поля для загрузки изображения при логине
+                const dataTransfer = new DataTransfer();
+                dataTransfer.items.add(new File([blob], 'snapshot.jpg', {type: 'image/jpeg'}));
+                fileInput.files = dataTransfer.files;
+
+                // Добавление fileInput в форму
+                const form = document.querySelector('form');
+                form.appendChild(fileInput);
+
+                alert('Снимок сделан и готов к отправке!');
+            });
+        });
+    </script>
+
+{% endblock %}
